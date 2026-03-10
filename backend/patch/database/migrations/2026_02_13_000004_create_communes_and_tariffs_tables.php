@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration {
     public function up(): void
@@ -19,7 +20,7 @@ return new class extends Migration {
             $table->foreignId('commune_id')->constrained('communes')->cascadeOnDelete();
             $table->decimal('amount', 12, 2);
             $table->boolean('active')->default(true);
-            $table->dateTime('starts_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->dateTime('starts_at')->useCurrent();
             $table->dateTime('ends_at')->nullable();
             $table->timestamps();
 

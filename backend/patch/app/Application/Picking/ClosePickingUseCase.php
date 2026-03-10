@@ -3,6 +3,7 @@
 namespace App\Application\Picking;
 
 use App\Domain\Common\Result;
+use App\Domain\Orders\OrderStatus;
 use App\Models\Order;
 use App\Models\PickingScan;
 use App\Models\PickingSession;
@@ -48,19 +49,21 @@ class ClosePickingUseCase
             }
         }
 
-        return DB::transaction(function () use ($order, $session) {
+        $currentStatus = $order->status;
+        $targetStatus = OrderStatus::Ready;
+
+        return DB::transaction(function () use ($order, $session, $currentStatus, $targetStatus) {
             $session->status = 'closed';
             $session->save();
 
-            $from = $order->status;
-            $order->status = 'ready';
+            $order->status = $targetStatus;
             $order->save();
 
             // Registrar cambio de estado en historial
             DB::table('order_status_history')->insert([
                 'order_id'           => $order->id,
-                'from_status'        => $from,
-                'to_status'          => 'ready',
+                'from_status'        => $currentStatus->value,
+                'to_status'          => $targetStatus->value,
                 'changed_by_user_id' => null,
                 'created_at'         => now(),
                 'updated_at'         => now(),
@@ -69,7 +72,7 @@ class ClosePickingUseCase
             return Result::ok([
                 'order_id'       => $order->id,
                 'picking_status' => $session->status,
-                'order_status'   => $order->status,
+                'order_status'   => $targetStatus->value,
             ]);
         });
     }

@@ -4,13 +4,19 @@ namespace App\Interfaces\Http\Controllers;
 
 use App\Application\Orders\CloseDeliveredOrderUseCase;
 use App\Application\Orders\SetOrderEnRouteUseCase;
+use App\Domain\Orders\OrderStatus;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class OrderController
 {
     public function index(Request $request)
     {
+        $request->validate([
+            'status' => ['nullable', Rule::in(OrderStatus::values())],
+        ]);
+
         $status = $request->query('status');
 
         $q = Order::query()->with(['customer','commune','courier','items.product','items.size']);
@@ -21,8 +27,20 @@ class OrderController
 
     public function show(int $orderId)
     {
-        $order = Order::query()->with(['customer','commune','courier','items.product','items.size','pickingSession.scans'])
+        $order = Order::query()
+            ->with([
+                'customer',
+                'commune',
+                'courier',
+                'items.product',
+                'items.size',
+                'pickingSession.scans',
+                'deliveryAddress',
+                'payments',
+                'statusHistory',
+            ])
             ->findOrFail($orderId);
+
         return response()->json($order);
     }
 
