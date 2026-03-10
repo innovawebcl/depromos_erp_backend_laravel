@@ -3,6 +3,33 @@
 Todas las versiones notables de este proyecto se documentan en este archivo.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.3.0] - 2026-03-10
+
+Infraestructura de contenedores reescrita para stack completo de producción.
+
+### Dockerfile Backend
+- Multi-stage build con PHP 8.3-cli optimizado
+- OPcache habilitado para producción
+- Non-root user (`appuser`) para seguridad
+- Healthcheck integrado contra endpoint `/api/login`
+- Timezone America/Santiago configurado
+- Wait-for-DB antes de migraciones y seeder
+
+### Docker Compose (Stack Completo)
+- 3 servicios: `db` (MySQL 8.0), `api` (Laravel), `web` (Angular + Nginx)
+- Healthchecks en los 3 servicios con `depends_on: condition: service_healthy`
+- Red bridge dedicada `depromos-net`
+- MySQL con utf8mb4, slow query log (>2s), buffer pool 256M
+- Variables obligatorias: `JWT_SECRET`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`
+- `FRONTEND_PATH` configurable para ubicación flexible del frontend
+
+### Documentación
+- `.env.example` completo con todas las variables del stack
+- `README.md` reescrito con diagrama de arquitectura, instrucciones de despliegue y desarrollo
+- `.dockerignore` para excluir archivos innecesarios del build context
+
+---
+
 ## [1.2.0] - 2026-03-10
 
 Consolidación del modelo de datos: enum de estados, integridad referencial y auditoría global.
