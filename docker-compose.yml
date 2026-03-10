@@ -1,49 +1,114 @@
-version: '3.9'
+# =============================================================================
+# Depromos ERP - Docker Compose (Stack Completo)
+# Backend v1.2.0 + Frontend v1.1.0
+#
+# Uso:
+#   cp .env.example .env   # editar variables
+#   docker compose up --build -d
+#
+# Acceso:
+#   Frontend: http://localhost (puerto 80)
+#   API:      http://localhost/api (proxy via nginx)
+#   MySQL:    localhost:33066 (acceso externo para debug)
+# =============================================================================
 
 services:
+
+  # --- MySQL 8.0 ---
   db:
     image: mysql:8.0
+    container_name: depromos-db
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-backoffice}
       MYSQL_USER: ${DB_USERNAME:-backoffice}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-backoffice}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      TZ: America/Santiago
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=256M
+      --max-connections=100
+      --slow-query-log=1
+      --slow-query-log-file=/var/log/mysql/slow.log
+      --long-query-time=2
     ports:
-      - "33066:3306"
-    command: --default-authentication-plugin=mysql_native_password
+      - "${DB_EXTERNAL_PORT:-33066}:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - db_logs:/var/log/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
+    networks:
+      - depromos-net
 
+  # --- Backend API (Laravel 12 + PHP 8.3) ---
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: depromos-api
+    restart: unless-stopped
     environment:
-      APP_ENV: ${APP_ENV:-local}
-      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_NAME: "Depromos ERP"
+      APP_ENV: ${APP_ENV:-production}
+      APP_DEBUG: ${APP_DEBUG:-false}
       APP_TIMEZONE: America/Santiago
+      APP_URL: ${APP_URL:-http://localhost}
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
       DB_DATABASE: ${DB_DATABASE:-backoffice}
       DB_USERNAME: ${DB_USERNAME:-backoffice}
-      DB_PASSWORD: ${DB_PASSWORD:-backoffice}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required. Generate with: php -r "echo bin2hex(random_bytes(32));"}
-    ports:
-      - "8000:8000"
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET es obligatorio. Generar con: php -r "echo bin2hex(random_bytes(32));"}
+      JWT_TTL_SECONDS: ${JWT_TTL_SECONDS:-28800}
+      LOG_CHANNEL: stderr
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/login"]
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/api/login", "-X", "POST", "-d", "{}", "-H", "Content-Type: application/json", "-o", "/dev/null", "-w", "%{http_code}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    networks:
+      - depromos-net
+
+  # --- Frontend (Angular 17 + Nginx) ---
+  web:
+    build:
+      context: ${FRONTEND_PATH:-../depromos_erp_frontend_angular/frontend}
+      dockerfile: Dockerfile
+    container_name: depromos-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 15s
+    networks:
+      - depromos-net
 
 volumes:
   db_data:
+    driver: local
+  db_logs:
+    driver: local
+
+networks:
+  depromos-net:
+    driver: bridge
