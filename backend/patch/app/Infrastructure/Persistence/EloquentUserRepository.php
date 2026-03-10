@@ -29,12 +29,12 @@ class EloquentUserRepository implements UserRepository
     {
         return new DomainUser(
             id: $u->id,
-            name: $u->name ?? ($u->first_name.' '.$u->last_name),
-            username: $u->username,
+            name: $u->full_name,
+            username: $u->username ?? $u->email,
             email: $u->email,
             passwordHash: $u->password,
             roleId: $u->role_id,
-            firstLogin: (bool)($u->first_login ?? false),
+            firstLogin: (bool) ($u->first_login ?? false),
             firstName: $u->first_name ?? null,
             lastName: $u->last_name ?? null,
         );

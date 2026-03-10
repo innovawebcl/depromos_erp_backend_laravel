@@ -17,4 +17,7 @@ class Order extends Model
     public function courier(): BelongsTo { return $this->belongsTo(Courier::class); }
     public function items(): HasMany { return $this->hasMany(OrderItem::class); }
     public function pickingSession(): HasOne { return $this->hasOne(PickingSession::class); }
+    public function deliveryAddress(): HasOne { return $this->hasOne(DeliveryAddress::class); }
+    public function payments(): HasMany { return $this->hasMany(Payment::class); }
+    public function statusHistory(): HasMany { return $this->hasMany(OrderStatusHistory::class); }
 }

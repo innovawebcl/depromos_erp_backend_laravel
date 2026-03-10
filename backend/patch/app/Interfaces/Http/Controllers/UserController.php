@@ -16,6 +16,8 @@ class UserController
         if ($search) {
             $q->where(function ($qq) use ($search) {
                 $qq->where('name','like',"%{$search}%")
+                   ->orWhere('first_name','like',"%{$search}%")
+                   ->orWhere('last_name','like',"%{$search}%")
                    ->orWhere('email','like',"%{$search}%")
                    ->orWhere('username','like',"%{$search}%");
             });
@@ -33,6 +35,8 @@ class UserController
     {
         $payload = $request->validate([
             'name' => ['required','string','max:255'],
+            'first_name' => ['nullable','string','max:255'],
+            'last_name' => ['nullable','string','max:255'],
             'username' => ['required','string','max:100','unique:users,username'],
             'email' => ['required','email','max:255','unique:users,email'],
             'password' => ['required','string','min:6'],
@@ -42,11 +46,14 @@ class UserController
 
         $user = User::create([
             'name' => $payload['name'],
+            'first_name' => $payload['first_name'] ?? null,
+            'last_name' => $payload['last_name'] ?? null,
             'username' => $payload['username'],
             'email' => $payload['email'],
             'password' => Hash::make($payload['password']),
             'role_id' => (int)$payload['role_id'],
             'active' => (bool)($payload['active'] ?? true),
+            'first_login' => true,
         ]);
 
         return response()->json($user->load('role'), 201);
@@ -58,6 +65,8 @@ class UserController
 
         $payload = $request->validate([
             'name' => ['sometimes','string','max:255'],
+            'first_name' => ['nullable','string','max:255'],
+            'last_name' => ['nullable','string','max:255'],
             'username' => ['sometimes','string','max:100','unique:users,username,'.$user->id],
             'email' => ['sometimes','email','max:255','unique:users,email,'.$user->id],
             'password' => ['nullable','string','min:6'],
