@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Application\Picking;
@@ -35,13 +34,16 @@ class ClosePickingUseCase
             return Result::fail('El picking ya está cerrado', 422);
         }
 
-        foreach ($order->items as $item) {
-            $scanned = (int) PickingScan::query()
-                ->where('picking_session_id', $session->id)
-                ->where('order_item_id', $item->id)
-                ->sum('scanned_quantity');
+        // Obtener todos los conteos de escaneo en una sola query (fix N+1)
+        $scannedTotals = PickingScan::query()
+            ->where('picking_session_id', $session->id)
+            ->groupBy('order_item_id')
+            ->selectRaw('order_item_id, SUM(scanned_quantity) as total_scanned')
+            ->pluck('total_scanned', 'order_item_id');
 
-            if ($scanned !== (int)$item->quantity) {
+        foreach ($order->items as $item) {
+            $scanned = (int) ($scannedTotals[$item->id] ?? 0);
+            if ($scanned !== (int) $item->quantity) {
                 return Result::fail('No se puede cerrar: faltan ítems por escanear', 422);
             }
         }
@@ -50,11 +52,25 @@ class ClosePickingUseCase
             $session->status = 'closed';
             $session->save();
 
-            // Estado del pedido pasa a ready (listo para despacho)
+            $from = $order->status;
             $order->status = 'ready';
             $order->save();
 
-            return Result::ok(['order_id' => $order->id, 'picking_status' => $session->status, 'order_status' => $order->status]);
+            // Registrar cambio de estado en historial
+            DB::table('order_status_history')->insert([
+                'order_id'           => $order->id,
+                'from_status'        => $from,
+                'to_status'          => 'ready',
+                'changed_by_user_id' => null,
+                'created_at'         => now(),
+                'updated_at'         => now(),
+            ]);
+
+            return Result::ok([
+                'order_id'       => $order->id,
+                'picking_status' => $session->status,
+                'order_status'   => $order->status,
+            ]);
         });
     }
 }

@@ -4,44 +4,46 @@ services:
   db:
     image: mysql:8.0
     environment:
-      MYSQL_DATABASE: backoffice
-      MYSQL_USER: backoffice
-      MYSQL_PASSWORD: backoffice
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${DB_DATABASE:-backoffice}
+      MYSQL_USER: ${DB_USERNAME:-backoffice}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-backoffice}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
     ports:
       - "33066:3306"
     command: --default-authentication-plugin=mysql_native_password
     volumes:
       - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      APP_ENV: local
-      APP_DEBUG: "true"
+      APP_ENV: ${APP_ENV:-local}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_TIMEZONE: America/Santiago
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
-      DB_DATABASE: backoffice
-      DB_USERNAME: backoffice
-      DB_PASSWORD: backoffice
+      DB_DATABASE: ${DB_DATABASE:-backoffice}
+      DB_USERNAME: ${DB_USERNAME:-backoffice}
+      DB_PASSWORD: ${DB_PASSWORD:-backoffice}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required. Generate with: php -r "echo bin2hex(random_bytes(32));"}
     ports:
-      - "8080:80"
+      - "8000:8000"
     depends_on:
-      - db
-
-  web:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    environment:
-      API_URL: http://localhost:8080/api
-    ports:
-      - "4200:4200"
-    depends_on:
-      - api
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/login"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
 volumes:
   db_data:

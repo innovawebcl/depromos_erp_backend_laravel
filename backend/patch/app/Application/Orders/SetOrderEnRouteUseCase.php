@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Application\Orders;
@@ -12,7 +11,7 @@ class SetOrderEnRouteUseCase
 {
     public function __construct(private readonly PushNotifier $push) {}
 
-    public function execute(int $orderId, int $etaMinutes): Result
+    public function execute(int $orderId, int $etaMinutes, ?int $userId = null): Result
     {
         $order = Order::query()->find($orderId);
         if (!$order) return Result::fail('Pedido no encontrado', 404);
@@ -21,7 +20,7 @@ class SetOrderEnRouteUseCase
             return Result::fail('Estado inválido para pasar a En ruta', 422);
         }
 
-        return DB::transaction(function () use ($order, $etaMinutes) {
+        return DB::transaction(function () use ($order, $etaMinutes, $userId) {
             $from = $order->status;
             $order->status = 'en_route';
             $order->eta_minutes = $etaMinutes;
@@ -31,7 +30,7 @@ class SetOrderEnRouteUseCase
                 'order_id' => $order->id,
                 'from_status' => $from,
                 'to_status' => 'en_route',
-                'changed_by_user_id' => null,
+                'changed_by_user_id' => $userId,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

@@ -21,6 +21,10 @@ RUN cp -R /patch/. /app/
 # JWT lib
 RUN composer require firebase/php-jwt:^6.10 --no-interaction
 
+# Timezone
+ENV TZ=America/Santiago
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
 # Env defaults
 RUN cp .env.example .env
 
@@ -30,4 +34,5 @@ RUN php artisan key:generate
 # Expose and run
 EXPOSE 8000
 
-CMD php artisan migrate --seed && php artisan serve --host=0.0.0.0 --port=8000
+# Wait for DB to be ready, then migrate and serve
+CMD bash -c 'echo "Waiting for database..."; while ! php artisan migrate:status > /dev/null 2>&1; do sleep 2; done; php artisan migrate --force --seed && php artisan serve --host=0.0.0.0 --port=8000'

@@ -1,4 +1,3 @@
-
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -16,9 +15,12 @@ use App\Interfaces\Http\Controllers\{
     ModuleController
 };
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 
 Route::middleware(['jwt'])->group(function () {
+
+    // Perfil del usuario autenticado
+    Route::get('/me', [AuthController::class, 'me']);
 
     // Administración (Roles/Usuarios/Módulos)
     Route::middleware(['can.use:roles'])->group(function () {
@@ -54,11 +56,6 @@ Route::middleware(['jwt'])->group(function () {
         Route::post('/banners', [BannerController::class, 'store']);
         Route::put('/banners/{id}', [BannerController::class, 'update']);
         Route::delete('/banners/{id}', [BannerController::class, 'destroy']);
-    });
-
-    // Inventario (stock está en product_sizes.stock; módulo se protege igual)
-    Route::middleware(['can.use:inventory'])->group(function () {
-        // inventario se gestiona vía update de tallas en productos por ahora
     });
 
     // Repartidores

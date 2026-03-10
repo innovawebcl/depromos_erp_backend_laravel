@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Interfaces\Http\Controllers;
@@ -41,7 +40,8 @@ class OrderController
     public function enRoute(int $orderId, Request $request, SetOrderEnRouteUseCase $uc)
     {
         $payload = $request->validate(['eta_minutes' => ['required','integer','min:1','max:10000']]);
-        $res = $uc->execute($orderId, (int)$payload['eta_minutes']);
+        $userId = (int) $request->attributes->get('user_id');
+        $res = $uc->execute($orderId, (int)$payload['eta_minutes'], $userId);
 
         return $res->ok
             ? response()->json($res->data)
@@ -55,7 +55,8 @@ class OrderController
             'delivery_photo_url' => ['nullable','string','max:2048'],
         ]);
 
-        $res = $uc->execute($orderId, $payload['receiver_rut'] ?? null, $payload['delivery_photo_url'] ?? null);
+        $userId = (int) $request->attributes->get('user_id');
+        $res = $uc->execute($orderId, $payload['receiver_rut'] ?? null, $payload['delivery_photo_url'] ?? null, $userId);
 
         return $res->ok
             ? response()->json($res->data)

@@ -35,9 +35,7 @@ return new class extends Migration {
             if (!Schema::hasColumn('users', 'role_id')) {
                 $table->foreignId('role_id')->nullable()->after('id')->constrained('roles')->nullOnDelete();
             }
-            if (!Schema::hasColumn('users', 'is_blacklisted')) {
-                $table->boolean('is_blacklisted')->default(false)->after('role_id');
-            }
+            // is_blacklisted pertenece a la tabla customers, no a users
         });
     }
 
@@ -47,9 +45,7 @@ return new class extends Migration {
             if (Schema::hasColumn('users', 'role_id')) {
                 $table->dropConstrainedForeignId('role_id');
             }
-            if (Schema::hasColumn('users', 'is_blacklisted')) {
-                $table->dropColumn('is_blacklisted');
-            }
+
         });
         Schema::dropIfExists('role_module_permissions');
         Schema::dropIfExists('roles');

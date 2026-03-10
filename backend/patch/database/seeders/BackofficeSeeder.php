@@ -8,6 +8,7 @@ use App\Models\RoleModulePermission;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class BackofficeSeeder extends Seeder
 {
@@ -40,15 +41,30 @@ class BackofficeSeeder extends Seeder
             );
         }
 
-        User::updateOrCreate(
-            ['email' => 'admin@demo.cl'],
+        // Generar contraseña segura aleatoria para el admin inicial
+        $adminPassword = env('ADMIN_DEFAULT_PASSWORD', Str::password(10));
+
+        $admin = User::updateOrCreate(
+            ['email' => 'admin@depromos.cl'],
             [
-                'name' => 'Admin Demo',
+                'name' => 'Admin Depromos',
                 'username' => 'admin',
-                'password' => Hash::make('admin123'),
+                'password' => Hash::make($adminPassword),
                 'role_id' => $super->id,
                 'active' => true,
             ]
         );
+
+        $this->command->info('');
+        $this->command->info('╔══════════════════════════════════════════════╗');
+        $this->command->info('║  CREDENCIALES ADMIN INICIAL                 ║');
+        $this->command->info('╠══════════════════════════════════════════════╣');
+        $this->command->info("║  Usuario:    admin                          ║");
+        $this->command->info("║  Email:      admin@depromos.cl              ║");
+        $this->command->info("║  Contraseña: {$adminPassword}");
+        $this->command->info('╠══════════════════════════════════════════════╣');
+        $this->command->warn('║  CAMBIE ESTA CONTRASEÑA INMEDIATAMENTE      ║');
+        $this->command->info('╚══════════════════════════════════════════════╝');
+        $this->command->info('');
     }
 }

@@ -1,34 +1,27 @@
-# Monorepo Backoffice (Laravel 12 + Angular CoreUI)
+# Depromos ERP - Backend (Laravel 12, Arquitectura Hexagonal)
 
 ## Requisitos
-- Docker + Docker Compose
 
-## Levantar demo
+- Docker + Docker Compose
+- Variable de entorno `JWT_SECRET` (obligatoria)
+
+## Levantar
+
 ```bash
+# Generar JWT secret
+export JWT_SECRET=$(php -r "echo bin2hex(random_bytes(32));")
+
+# Levantar servicios
 docker compose up --build
 ```
 
 - API: http://localhost:8000/api
-- Front: http://localhost:4200
 
-## Credenciales demo
-- Usuario: admin (o admin@demo.cl)
-- Password: admin123
+## Credenciales
+
+El seeder genera una contraseña aleatoria que se muestra en la consola al ejecutar `db:seed`.
+Para definir una contraseña específica, use la variable de entorno `ADMIN_DEFAULT_PASSWORD`.
 
 ## Módulos
-Productos, Inventario, Banners, Pedidos, Picking, Repartidores, Tarifas por Comuna, Clientes, Usuarios, Roles.
 
-## Estado demo-ready
-Incluye pantallas Angular completas (listado + detalle/edición según aplique) para:
-- Pedidos
-- Picking
-- Usuarios
-- Roles y módulos
-- Productos
-- Inventario
-- Banners
-- Repartidores (incluye vista de calificaciones)
-- Tarifas por Comuna (incluye histórico y seteo de nueva tarifa)
-- Clientes (lista, detalle, blacklist y meta de compras)
-
-El backend expone endpoints REST para los módulos anteriores y se entrega con migraciones + seeders demo.
+Productos, Inventario, Banners, Pedidos, Picking, Repartidores, Tarifas por Comuna, Clientes, Usuarios, Roles y Permisos.
