@@ -3,6 +3,32 @@
 Todas las versiones notables de este proyecto se documentan en este archivo.
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y [Semantic Versioning](https://semver.org/lang/es/).
 
+## [1.2.0] - 2026-03-10
+
+Consolidación del modelo de datos: enum de estados, integridad referencial y auditoría global.
+
+### OrderStatus Enum (H8)
+- Enum PHP 8.1 `App\Domain\Orders\OrderStatus` con 6 estados y máquina de transiciones
+- Cast nativo en modelo Order, labels en español
+- 3 UseCases migrados, 0 strings hardcoded de status fuera del enum
+- OrderController valida filtro status con `Rule::in(OrderStatus::values())`
+
+### Integridad Referencial (H10, H13)
+- **H10:** `customers.email` ahora tiene constraint `UNIQUE`
+- **H13:** `commune_tariffs.starts_at` corregido: `DB::raw()` → `useCurrent()`
+
+### Audit Log Global (H16)
+- Tabla `audit_logs` con 4 índices optimizados
+- Trait `Auditable` con boot automático (created/updated/deleted/restored)
+- Excluye campos sensibles, captura user_id + IP + user_agent
+- Aplicado a 6 modelos: User, Product, Order, Banner, Courier, Customer
+
+### Migraciones Nuevas
+- `000012` - `fix_customers_email_unique_and_tariffs_default`
+- `000013` - `create_audit_logs_table`
+
+---
+
 ## [1.1.0] - 2026-03-10
 
 Corrección de modelo de datos, índices de performance y modelo funcional completo.
