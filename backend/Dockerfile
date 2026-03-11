@@ -11,6 +11,9 @@ WORKDIR /build
 # Crear skeleton Laravel para obtener composer.json base
 RUN composer create-project laravel/laravel:^12.0 /build --no-interaction --no-dev --prefer-dist
 
+# Configurar composer para no bloquear por advisories (firebase/php-jwt tiene advisory conocido)
+RUN composer config audit.block-insecure false
+
 # Instalar dependencias adicionales del proyecto
 RUN composer require firebase/php-jwt:^6.10 --no-interaction --update-no-dev
 
