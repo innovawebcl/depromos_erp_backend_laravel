@@ -18,12 +18,12 @@ RUN composer config audit.block-insecure false
 RUN composer require firebase/php-jwt:^6.10 --no-interaction --update-no-dev
 
 # --- Stage 2: Application ---
-FROM php:8.3-cli
+FROM php:8.4-cli
 
 # Metadata
 LABEL maintainer="InnovaWeb <dev@innovaweb.cl>"
 LABEL description="Depromos ERP Backend API - Laravel 12"
-LABEL version="1.2.0"
+LABEL version="1.3.0"
 
 # System deps (mínimos para producción)
 RUN apt-get update && apt-get install -y --no-install-recommends \
