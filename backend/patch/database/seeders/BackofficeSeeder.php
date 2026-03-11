@@ -41,19 +41,30 @@ class BackofficeSeeder extends Seeder
             );
         }
 
-        // Generar contraseña segura aleatoria para el admin inicial
-        $adminPassword = env('ADMIN_DEFAULT_PASSWORD', Str::password(10));
+        // Idempotente: solo crear admin si no existe (no sobreescribir password en restarts)
+        $existingAdmin = User::where('email', 'admin@depromos.cl')->first();
 
-        $admin = User::updateOrCreate(
-            ['email' => 'admin@depromos.cl'],
-            [
-                'name' => 'Admin Depromos',
-                'username' => 'admin',
-                'password' => Hash::make($adminPassword),
+        if ($existingAdmin) {
+            // Solo actualizar role y active, nunca la password
+            $existingAdmin->update([
                 'role_id' => $super->id,
                 'active' => true,
-            ]
-        );
+            ]);
+            $this->command->info('[Depromos ERP] Admin user already exists — password preserved.');
+            return;
+        }
+
+        // Primera ejecución: crear admin con contraseña segura
+        $adminPassword = env('ADMIN_DEFAULT_PASSWORD', Str::password(10));
+
+        User::create([
+            'name' => 'Admin Depromos',
+            'username' => 'admin',
+            'email' => 'admin@depromos.cl',
+            'password' => Hash::make($adminPassword),
+            'role_id' => $super->id,
+            'active' => true,
+        ]);
 
         $this->command->info('');
         $this->command->info('╔══════════════════════════════════════════════╗');
