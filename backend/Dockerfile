@@ -12,7 +12,7 @@ WORKDIR /build
 RUN composer create-project laravel/laravel:^12.0 /build --no-interaction --no-dev --prefer-dist
 
 # Instalar dependencias adicionales del proyecto
-RUN composer require firebase/php-jwt:^6.10 --no-interaction --no-dev
+RUN composer require firebase/php-jwt:^6.10 --no-interaction --update-no-dev
 
 # --- Stage 2: Application ---
 FROM php:8.3-cli
