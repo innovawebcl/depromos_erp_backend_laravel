@@ -91,10 +91,13 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8000/api/login -X POST -d '{}' -H 'Content-Type: application/json' -o /dev/null -s -w '%{http_code}' | grep -q '4' || exit 1
 
-# Entrypoint: wait for DB, migrate, seed (idempotent), serve
+# Entrypoint: clear build cache, wait for DB, migrate, seed, serve
 CMD ["bash", "-c", "\
+    echo '[Depromos ERP] Clearing build-time config cache...' && \
+    php artisan config:clear && \
+    php artisan config:cache && \
     echo '[Depromos ERP] Waiting for database...' && \
-    until php artisan migrate:status > /dev/null 2>&1; do sleep 2; done && \
+    for i in $(seq 1 30); do php artisan migrate:status > /dev/null 2>&1 && break || sleep 2; done && \
     echo '[Depromos ERP] Running migrations...' && \
     php artisan migrate --force && \
     echo '[Depromos ERP] Running seeders...' && \
