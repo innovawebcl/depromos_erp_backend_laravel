@@ -66,13 +66,14 @@ COPY --from=vendor /build /app
 COPY patch/ /patch/
 RUN cp -R /patch/. /app/ && rm -rf /patch
 
-# Set env from example
-RUN cp .env.example .env
+# Set env for build (runtime env vars from docker-compose override these)
+RUN cp .env.example .env \
+    && echo 'JWT_SECRET=build-placeholder' >> .env
 
 # Generate app key
 RUN php artisan key:generate
 
-# Optimize for production (config, routes, views cache)
+# Clear caches (runtime env vars will be used, not cached config)
 RUN php artisan config:clear && php artisan route:clear && php artisan view:clear
 
 # Create storage directories if missing

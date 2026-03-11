@@ -17,6 +17,10 @@ class LoginUseCase
 
     public function execute(string $username, string $password): Result
     {
+        if (empty(config('backoffice.jwt_secret'))) {
+            return Result::fail('JWT_SECRET no configurado en el servidor', 500);
+        }
+
         $user = $this->users->findByUsername($username);
         if (!$user) {
             return Result::fail('Usuario inválido', 401);
